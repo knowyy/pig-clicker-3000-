@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piggy Tycoon: Ultimate Save Edition</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a2e;
+            font-family: 'Arial Rounded MT Bold', sans-serif;
+        }
+
+        #game-container {
+            width: 35vw;
+            min-width: 360px;
+            height: 90vh;
+            background: #fff;
+            border: 6px solid #ff85a2;
+            border-radius: 40px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Пасхалка з Бобром */
+        #secret-trigger {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 70px;
+            height: 70px;
+            z-index: 300;
+        }
+
+        #beaver-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            z-index: 500;
+            justify-content: center;
+            align-items: center;
+            pointer-events: all;
+        }
+        #beaver-emoji { font-size: 500px; }
+
+        /* Кнопка статистики 🪨 */
+        #stats-stone-btn {
+            position: absolute;
+            right: 15px;
+            top: 40%;
+            width: 65px;
+            height: 65px;
+            background: #fff0f3;
+            border: 3px solid #ff85a2;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 38px;
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.1s;
+        }
+        #stats-stone-btn:active { transform: scale(0.9); }
+
+        /* Вікно статистики */
+        #stats-window {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            background: #ffc1d1;
+            border: 5px solid #ff85a2;
+            border-radius: 25px;
+            padding: 25px;
+            z-index: 400;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .stats-line {
+            font-size: 1.2rem;
+            margin: 12px 0;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.4);
+            padding-bottom: 5px;
+        }
+
+        .close-btn {
+            width: 100%;
+            background: white;
+            color: #ff85a2;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 1rem;
+        }
+
+        /* Панель валют */
+        .currency-panel {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #d63384;
+            background: #fff9fb;
+        }
+
+        /* Кнопка свині */
+        .main-click-area {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #pig-hero {
+            font-size: 250px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.05s;
+        }
+        #pig-hero:active { transform: scale(0.85); }
+
+        /* Магазин */
+        .bottom-shop {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 15px;
+            background: #fff0f3;
+            border-top: 3px solid #ffdae3;
+            height: 340px;
+        }
+
+        .item-card {
+            background: white;
+            border: 3px solid #ffdae3;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .icon-box {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+        }
+
+        .price-tag {
+            width: 100%;
+            height: 70px;
+            background: #ff85a2;
+            color: white;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .error-shake {
+            background-color: #ff4d4d !important;
+            animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="secret-trigger"></div>
+        <div id="beaver-overlay"><div id="beaver-emoji">🦫</div></div>
+
+        <div id="stats-stone-btn">🪨</div>
+
+        <div id="stats-window">
+            <h2 style="text-align:center; margin-top:0; letter-spacing: 2px;">STATISTICS</h2>
+            <div class="stats-line" id="stat-bonus">Current Bonus: x1</div>
+            <div class="stats-line" id="stat-all-p">🐷 All-time: 0</div>
+            <div class="stats-line" id="stat-all-s">🐽 All-time: 0</div>
+            <div class="stats-line" id="stat-all-m">🥩 All-time: 0</div>
+            <div class="stats-line" id="stat-all-b">🥓 All-time: 0</div>
+            <button class="close-btn" onclick="document.getElementById('stats-window').style.display='none'">CLOSE</button>
+        </div>
+
+        <div class="currency-panel">
+            <div id="val-p">🐷: 0</div>
+            <div id="val-s">🐽: 0</div>
+            <div id="val-m">🥩: 0</div>
+            <div id="val-b">🥓: 0</div>
+        </div>
+
+        <div class="main-click-area">
+            <button id="pig-hero">🐖</button>
+        </div>
+
+        <div class="bottom-shop">
+            <div class="item-card">
+                <div class="icon-box">🐽</div>
+                <button id="buy-s" class="price-tag">100 🐷</button>
+            </div>
+            <div class="item-card">
+                <div class="icon-box">🥩</div>
+                <button id="buy-m" class="price-tag">5 🐽</button>
+            </div>
+            <div class="item-card">
+                <div class="icon-box">🥓</div>
+                <button id="buy-b" class="price-tag">5 🥩</button>
+            </div>
+            <div class="item-card">
+                <div class="icon-box">🔃</div>
+                <button id="buy-r" class="price-tag">10 🥓</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="oink" src="https://www.soundjay.com/nature/sounds/guinea-pig-1.mp3"></audio>
+
+    <script>
+        // Завантаження збережень
+        let prestigeMult = Number(localStorage.getItem('pig_save_mult')) || 1;
+        let totalP = Number(localStorage.getItem('pig_save_totalP')) || 0;
+        let totalS = Number(localStorage.getItem('pig_save_totalS')) || 0;
+        let totalM = Number(localStorage.getItem('pig_save_totalM')) || 0;
+        let totalB = Number(localStorage.getItem('pig_save_totalB')) || 0;
+
+        // Поточні ресурси (скидаються при ресеті)
+        let pigs = 0, snouts = 0, meat = 0, bacon = 0;
+        let sPrice = 100, mPrice = 5, bPrice = 5, rPrice = 10;
+        let clickBase = 1;
+
+        const oink = document.getElementById('oink');
+        const beaver = document.getElementById('beaver-overlay');
+        const statsWindow = document.getElementById('stats-window');
+
+        function save() {
+            localStorage.setItem('pig_save_mult', prestigeMult);
+            localStorage.setItem('pig_save_totalP', totalP);
+            localStorage.setItem('pig_save_totalS', totalS);
+            localStorage.setItem('pig_save_totalM', totalM);
+            localStorage.setItem('pig_save_totalB', totalB);
+        }
+
+        function updateUI() {
+            document.getElementById('val-p').innerText = `🐷: ${Math.floor(pigs)}`;
+            document.getElementById('val-s').innerText = `🐽: ${snouts}`;
+            document.getElementById('val-m').innerText = `🥩: ${meat}`;
+            document.getElementById('val-b').innerText = `🥓: ${bacon}`;
+
+            document.getElementById('buy-s').innerText = `${sPrice} 🐷`;
+            document.getElementById('buy-m').innerText = `${mPrice} 🐽`;
+            document.getElementById('buy-b').innerText = `${bPrice} 🥩`;
+            document.getElementById('buy-r').innerText = `${rPrice} 🥓`;
+
+            document.getElementById('stat-bonus').innerText = `Current Bonus: x${prestigeMult}`;
+            document.getElementById('stat-all-p').innerText = `🐷 All-time: ${Math.floor(totalP)}`;
+            document.getElementById('stat-all-s').innerText = `🐽 All-time: ${totalS}`;
+            document.getElementById('stat-all-m').innerText = `🥩 All-time: ${totalM}`;
+            document.getElementById('stat-all-b').innerText = `🥓 All-time: ${totalB}`;
+        }
+
+        // Клік по свині
+        document.getElementById('pig-hero').onclick = () => {
+            let gain = clickBase * prestigeMult;
+            pigs += gain;
+            totalP += gain;
+            oink.currentTime = 0;
+            oink.play().catch(()=>{});
+            updateUI();
+            save();
+        };
+
+        // Купівля п'ятачка (🐽)
+        document.getElementById('buy-s').onclick = function() {
+            if (pigs >= sPrice) {
+                pigs -= sPrice; snouts++; totalS++;
+                clickBase += 1;
+                sPrice = Math.floor(sPrice * 1.25);
+                updateUI(); save();
+            } else flash(this);
+        };
+
+        // Купівля м'яса (🥩)
+        document.getElementById('buy-m').onclick = function() {
+            if (snouts >= mPrice) {
+                snouts -= mPrice; meat++; totalM++;
+                clickBase += 6;
+                mPrice = Math.floor(mPrice * 1.5);
+                updateUI(); save();
+            } else flash(this);
+        };
+
+        // Купівля бекону (🥓)
+        document.getElementById('buy-b').onclick = function() {
+            if (meat >= bPrice) {
+                meat -= bPrice; bacon++; totalB++;
+                clickBase += 25;
+                bPrice = Math.floor(bPrice * 1.6);
+                updateUI(); save();
+            } else flash(this);
+        };
+
+        // Престиж (🔃)
+        document.getElementById('buy-r').onclick = function() {
+            if (bacon >= rPrice) {
+                prestigeMult *= 2;
+                pigs = 0; snouts = 0; meat = 0; bacon = 0;
+                clickBase = 1; sPrice = 100; mPrice = 5; bPrice = 5;
+                updateUI(); save();
+                alert("Prestiege! Bonus x" + prestigeMult);
+            } else flash(this);
+        };
+
+        // Статистика
+        document.getElementById('stats-stone-btn').onclick = () => {
+            statsWindow.style.display = (statsWindow.style.display === 'block') ? 'none' : 'block';
+        };
+
+        // Секретний бобер
+        document.getElementById('secret-trigger').onclick = () => {
+            beaver.style.display = 'flex';
+            setTimeout(() => { beaver.style.display = 'none'; }, 3000);
+        };
+
+        function flash(el) {
+            el.classList.add('error-shake');
+            setTimeout(() => el.classList.remove('error-shake'), 600);
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
